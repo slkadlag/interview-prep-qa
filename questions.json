@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "category": "JavaScript",
+    "question": "What is a closure?",
+    "answer": "A **closure** is a function bundled together with references to its surrounding (lexical) scope. The inner function keeps access to the outer function's variables even after the outer function has returned.\n\n```js\nfunction counter() {\n  let count = 0;\n  return () => ++count; // remembers `count`\n}\n\nconst next = counter();\nnext(); // 1\nnext(); // 2\n```\n\nCommon uses: data privacy, function factories, and maintaining state in callbacks."
+  },
+  {
+    "id": 2,
+    "category": "JavaScript",
+    "question": "What's the difference between `let`, `const`, and `var`?",
+    "answer": "- **`var`** — function-scoped, hoisted and initialized as `undefined`, can be redeclared. Avoid in modern code.\n- **`let`** — block-scoped, hoisted but in the *temporal dead zone* until declared, reassignable.\n- **`const`** — block-scoped like `let`, but the binding cannot be reassigned. The value can still be mutated (e.g. you can `push` to a `const` array).\n\n> Rule of thumb: default to `const`, use `let` when you need to reassign, and avoid `var`."
+  },
+  {
+    "id": 3,
+    "category": "Behavioral",
+    "question": "Tell me about yourself.",
+    "answer": "Keep it ~90 seconds, structured as **Present → Past → Future**:\n\n1. **Present** — who you are now and what you do.\n2. **Past** — a couple of relevant experiences/achievements that led here.\n3. **Future** — why you're excited about *this* role.\n\nTailor it to the job description and end on why you're a strong fit. Avoid reciting your whole résumé."
+  },
+  {
+    "id": 4,
+    "category": "Data Structures",
+    "question": "What is the average time complexity of hash map operations?",
+    "answer": "For a well-distributed hash map:\n\n| Operation | Average | Worst case |\n|-----------|---------|-----------|\n| Insert    | O(1)    | O(n)      |\n| Lookup    | O(1)    | O(n)      |\n| Delete    | O(1)    | O(n)      |\n\nThe worst case (O(n)) happens when many keys collide into the same bucket. Good hash functions and resizing keep operations close to O(1)."
+  }
+]
