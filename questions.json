@@ -7,347 +7,452 @@
   },
   {
     "id": 2,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Event loop",
     "answer": "What lets single-threaded JS handle async work. Synchronous code runs on the **call stack**; when it empties, the loop pulls queued callbacks. Each tick it fully drains the **microtask** queue (promises), then takes **one macrotask** (timer, I/O, event), then repeats — with a chance to render in between. See [[microtasks-vs-macrotasks]]."
   },
   {
     "id": 3,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Microtasks vs macrotasks",
     "answer": "**Microtasks** (`Promise.then`, `queueMicrotask`, `MutationObserver`) run before the next macrotask, and the whole queue is emptied each loop tick. **Macrotasks** (`setTimeout`, `setInterval`, DOM events, I/O) run one per tick. So a resolved promise beats a `setTimeout(…, 0)`:\n\n```js\nconsole.log('A');\nsetTimeout(() => console.log('timeout'));   // macrotask\nPromise.resolve().then(() => console.log('promise')); // microtask\nconsole.log('B');\n// A, B, promise, timeout\n```"
   },
   {
     "id": 4,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Closures",
     "answer": "A function bundled with references to its surrounding (lexical) scope — it keeps access to outer variables even after the outer function returns.\n\n```js\nfunction counter() {\n  let count = 0;\n  return () => ++count; // remembers `count`\n}\nconst next = counter();\nnext(); // 1\nnext(); // 2\n```\n\nUses: data privacy, function factories, and stable state in hooks/callbacks."
   },
   {
     "id": 5,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Async execution (callbacks → promises → async/await)",
     "answer": "Async work is handed to the host (Web APIs/Node), which queues a callback for the [[event-loop]] when done. **Promises** represent a future value (`pending → fulfilled/rejected`). **async/await** is sugar over promises that reads sequentially — `await` pauses *that function*, not the thread, yielding control back to the loop. Errors propagate via `.catch` / `try…catch`."
   },
   {
     "id": 6,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Prototypes & prototypal inheritance",
     "answer": "Every object has an internal `[[Prototype]]` link. A property lookup walks this **prototype chain** until it finds the key or hits `null`. Objects inherit shared methods this way instead of copying them. `class` syntax is sugar over prototypes. Related: `Object.create`, `Object.getPrototypeOf`, `Constructor.prototype`."
   },
   {
     "id": 7,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Execution context & hoisting",
     "answer": "When code runs, JS creates an **execution context** (global or per-function) with its variable environment, scope chain, and `this`. In the creation phase, declarations are **hoisted**: `var` → initialized to `undefined`, `let`/`const` → exist but in the *temporal dead zone* until declared, function declarations → fully available. The **call stack** tracks active contexts."
   },
   {
     "id": 8,
-    "category": "JavaScript Internals",
+    "category": "Javascript",
     "question": "Memory leaks",
     "answer": "Memory the app no longer needs but the garbage collector can't reclaim because something still references it. Common frontend causes: timers/intervals never cleared, event listeners not removed, detached DOM nodes held by closures, ever-growing global caches, and stale refs in `useEffect` without cleanup. Fix: return a cleanup from effects, `removeEventListener`, `clearInterval`, and avoid unbounded caches."
   },
-
   {
     "id": 9,
-    "category": "React – Core",
+    "category": "React",
     "question": "JSX",
     "answer": "A syntax extension that looks like HTML but compiles (via Babel) to `React.createElement(...)` calls returning plain objects (the virtual DOM). It lets you describe UI declaratively. Rules: expressions go in `{}`, attributes are camelCase (`className`, `onClick`), and a component must return a single root (use a `<Fragment>` / `<>` to group)."
   },
   {
     "id": 10,
-    "category": "React – Core",
+    "category": "React",
     "question": "Props",
     "answer": "Read-only inputs passed parent → child to configure and render it. Data flows **one way** (down). A child must not mutate its props; to change parent data, the parent passes a callback the child calls. Props can be any value, including functions and JSX (`children`)."
   },
   {
     "id": 11,
-    "category": "React – Core",
+    "category": "React",
     "question": "State",
     "answer": "Data a component owns and can change over time; updating it (`useState` setter / `setState`) schedules a re-render. State is local/private unless lifted up or shared via context/store. Updates are **asynchronous and batched**, so compute from the previous value when it depends on it: `setCount(c => c + 1)`."
   },
   {
     "id": 12,
-    "category": "React – Core",
+    "category": "React",
     "question": "Events",
     "answer": "React uses **synthetic events** — a cross-browser wrapper over native events — attached with camelCase props like `onClick`/`onChange`. Handlers receive the synthetic event; use `e.preventDefault()` and `e.stopPropagation()` as usual. React delegates listeners at the root for efficiency."
   },
   {
     "id": 13,
-    "category": "React – Core",
+    "category": "React",
     "question": "Core hooks: useState, useEffect, useMemo, useCallback, useRef",
     "answer": "- **useState** — local state + setter; updating it re-renders.\n- **useEffect** — run side effects *after* render (data fetch, subscriptions, DOM); the deps array controls when it re-runs; return a cleanup function.\n- **useMemo** — cache an expensive computed *value* between renders unless deps change.\n- **useCallback** — cache a *function's identity* between renders (for memoized children / effect deps). `useCallback(fn, d)` ≈ `useMemo(() => fn, d)`.\n- **useRef** — a mutable `.current` box that persists across renders **without** causing re-renders; also holds DOM nodes."
   },
   {
     "id": 14,
-    "category": "React – Core",
+    "category": "React",
     "question": "Context API – build a theme/language switcher",
     "answer": "Context shares a value down the tree without prop drilling: `createContext`, wrap in a `<Provider value={…}>`, read with `useContext`.\n\n```jsx\nconst ThemeCtx = createContext();\nfunction ThemeProvider({ children }) {\n  const [theme, setTheme] = useState('light');\n  const toggle = () => setTheme(t => t === 'light' ? 'dark' : 'light');\n  return <ThemeCtx.Provider value={{ theme, toggle }}>{children}</ThemeCtx.Provider>;\n}\nconst useTheme = () => useContext(ThemeCtx);\n```\n\nA language switcher is the same shape (store `locale` + `setLocale`). Note its [[context-api-limitations]]."
   },
   {
     "id": 15,
-    "category": "React – Core",
+    "category": "React",
     "question": "Forms – controlled vs uncontrolled",
     "answer": "- **Controlled** — value lives in React state (`value` + `onChange`). Single source of truth; easy validation, conditional UI, and formatting.\n- **Uncontrolled** — the DOM holds the value; you read it via a `ref` or `FormData` on submit. Less code, good for simple forms, file inputs, or integrating non-React widgets.\n\nDefault to controlled; reach for uncontrolled when you don't need to react to every keystroke."
   },
   {
     "id": 16,
-    "category": "React – Core",
+    "category": "React",
     "question": "Lifecycle comparison: Class vs Hooks",
     "answer": "Hooks replace lifecycle methods:\n\n| Class | Hooks |\n|-------|-------|\n| `componentDidMount` | `useEffect(fn, [])` |\n| `componentDidUpdate` | `useEffect(fn, [deps])` |\n| `componentWillUnmount` | cleanup `return` in `useEffect` |\n| `render()` | the function body |\n\nHooks **colocate** related setup + teardown in one effect instead of splitting logic across three methods, and make logic reusable via custom hooks."
   },
-
   {
     "id": 17,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Reconciliation",
     "answer": "React's diffing process: it compares the new virtual-DOM tree with the previous one and mutates only what changed. Heuristics: different element **type** → replace the subtree; same type → update props; **keys** identify list items so they're matched instead of re-created. Using array index as a key (when the list reorders) causes subtle bugs and wasted work."
   },
   {
     "id": 18,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Rendering lifecycle (render vs commit)",
     "answer": "Two phases. **Render**: React calls your components and builds the virtual DOM — must be pure and can be paused/restarted (basis of concurrency). **Commit**: React applies the diff to the real DOM, then runs layout effects (`useLayoutEffect`) synchronously and passive effects (`useEffect`) after paint. This is why render must have no side effects."
   },
   {
     "id": 19,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Hydration",
     "answer": "After SSR sends static HTML, the client **hydrates** it: React reuses the existing DOM and attaches event listeners + state instead of re-rendering from scratch, so the page becomes interactive fast. If the server and client render different markup you get a *hydration mismatch* warning. React 18 adds selective/streaming hydration."
   },
   {
     "id": 20,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Concurrent rendering",
     "answer": "React 18's ability to **interrupt, pause, and resume** rendering so urgent updates (typing, clicks) aren't blocked by heavy ones. You mark non-urgent work with `startTransition`/`useTransition` or `useDeferredValue`. Rendering becomes interruptible rather than a single blocking pass — keeping the UI responsive."
   },
   {
     "id": 21,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Suspense",
     "answer": "Lets a component \"wait\" for something (lazy code or async data) and show a `fallback` until it's ready:\n\n```jsx\n<Suspense fallback={<Spinner />}>\n  <LazyProfile />\n</Suspense>\n```\n\nWorks with `React.lazy` and Suspense-enabled data libraries, and powers streaming SSR with concurrent rendering."
   },
   {
     "id": 22,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "State boundaries (where should state live?)",
     "answer": "Keep state as **local** as possible and lift it only as high as truly needed (the nearest common ancestor of components that use it). Colocating state shrinks the re-render blast radius and complexity; reach for context/global stores only for genuinely shared state. Drawing good boundaries is a core performance + architecture skill."
   },
   {
     "id": 23,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Error boundaries & error-handling strategies",
     "answer": "An **error boundary** is a class component with `getDerivedStateFromError` / `componentDidCatch` that catches render-time errors in its subtree and shows a fallback (the `react-error-boundary` lib wraps this for hooks). Boundaries **don't** catch errors in event handlers, async code, or SSR — handle those with `try/catch`. Layered strategy: boundaries for UI crashes + `try/catch` for async + a global handler and logging (e.g. Sentry) for the rest."
   },
   {
     "id": 24,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "Custom hooks – extract logic cleanly",
     "answer": "A function named `use*` that calls other hooks to package reusable stateful logic — keeping components lean and the logic testable/shareable.\n\n```js\nfunction useToggle(initial = false) {\n  const [on, setOn] = useState(initial);\n  const toggle = useCallback(() => setOn(o => !o), []);\n  return [on, toggle];\n}\n```\n\nRules of hooks still apply (call at top level, only from React functions)."
   },
   {
     "id": 25,
-    "category": "React – Advanced",
+    "category": "React",
     "question": "React Router v6 – nested routes, loaders",
     "answer": "v6 uses `<Routes>`/`<Route>` with **relative + nested** routes and `<Outlet>` to render children. The data router (`createBrowserRouter`) adds per-route **`loader`** (fetch data before render) and **`action`** (handle mutations), so data is ready when the component mounts. Hooks: `useNavigate`, `useParams`, `useLoaderData`, `useSearchParams`."
   },
-
   {
     "id": 26,
-    "category": "Performance",
+    "category": "React",
     "question": "React performance optimization techniques (overview)",
     "answer": "Main levers: **measure first** with the Profiler, then — avoid unnecessary re-renders (`React.memo`, `useMemo`, `useCallback`, good state boundaries), **virtualize** long lists, **code-split + lazy load**, keep `key`s stable, debounce/throttle expensive handlers, and lazy-load images/assets. Optimize the proven bottleneck, not everything."
   },
   {
     "id": 27,
-    "category": "Performance",
+    "category": "React",
     "question": "How do you prevent unnecessary re-renders of child components?",
     "answer": "- Wrap pure children in **`React.memo`**.\n- Pass **stable props**: `useCallback` for functions, `useMemo` for objects/arrays (avoid new inline `{}`/`[]`/`() => {}` in JSX props).\n- **Colocate or split state** so a change doesn't re-render unrelated siblings.\n- Split frequently-changing **context** so consumers don't all re-render.\n\nConfirm with the React Profiler — don't guess."
   },
   {
     "id": 28,
-    "category": "Performance",
+    "category": "React",
     "question": "How does React.memo help optimize performance?",
     "answer": "`React.memo` memoizes a component so it **skips re-rendering when its props are shallow-equal** to the previous render. Great for expensive, pure components that often receive the same props. It's useless if props get new identities every render — pair it with `useCallback`/`useMemo`. You can pass a custom comparison as the 2nd arg."
   },
   {
     "id": 29,
-    "category": "Performance",
+    "category": "React",
     "question": "Memoization tradeoffs (when NOT to memoize)",
     "answer": "Memoization isn't free — it costs memory plus a comparison on every render and adds code complexity. For cheap components, re-rendering is often *faster* than memoizing. Memoize when a component is genuinely expensive, renders often with stable props, or must keep a **stable identity** for deps/memoized children. Rule: measure, then memoize the hotspot — not by default."
   },
   {
     "id": 30,
-    "category": "Performance",
+    "category": "React",
     "question": "React Profiler",
     "answer": "The React DevTools **Profiler** records renders so you can see which components re-rendered, *why* (props/state/hooks/parent), and how long each took (flamegraph + ranked views). Use it to find the real bottleneck **before** reaching for memoization or virtualization. `<Profiler>` API can also log timings programmatically."
   },
   {
     "id": 31,
-    "category": "Performance",
+    "category": "React",
     "question": "Virtualization (windowing)",
     "answer": "Render only the rows visible in the viewport (plus a small buffer) instead of thousands of DOM nodes, recycling elements as the user scrolls. Libraries: **react-window**, react-virtualized, TanStack Virtual. Essential for long lists, big tables, and chat/feed UIs — keeps the DOM small and scrolling smooth."
   },
   {
     "id": 32,
-    "category": "Performance",
+    "category": "React",
     "question": "Code splitting & lazy loading",
     "answer": "Split the bundle so code loads on demand instead of all upfront. In React:\n\n```jsx\nconst Settings = React.lazy(() => import('./Settings'));\n// render inside <Suspense fallback={<Spinner />}>\n```\n\n**Route-based** splitting is the highest-impact. Reduces the initial bundle and time-to-interactive; also lazy-load heavy components and below-the-fold assets/images."
   },
   {
     "id": 33,
-    "category": "Performance",
+    "category": "React",
     "question": "Bundle optimization",
     "answer": "Shrink the JS shipped to the browser: tree-shaking, code splitting, dynamic imports, dropping/trimming heavy dependencies (and avoiding duplicate ones), compression (gzip/brotli), and analyzing with **webpack-bundle-analyzer** / source-map-explorer. Smaller, fewer bundles → faster load and parse."
   },
   {
     "id": 34,
-    "category": "Performance",
+    "category": "React",
     "question": "Network waterfalls",
     "answer": "A chain of requests where each waits on the previous, stretching total load time (e.g. fetch user → then fetch user's posts → then comments). Fix by **parallelizing** independent requests (`Promise.all`), moving fetches earlier (route loaders/prefetch), batching or using GraphQL/BFF, HTTP/2 multiplexing, and avoiding fetch-on-render cascades. Spot them in the DevTools Network tab."
   },
   {
     "id": 35,
-    "category": "Performance",
+    "category": "React",
     "question": "Core Web Vitals & Lighthouse audits",
     "answer": "**Core Web Vitals** are Google's real-user UX metrics: **LCP** (loading — largest element paints), **INP** (interactivity — responsiveness, replaced FID), **CLS** (visual stability — unexpected layout shift). **Lighthouse** (Chrome DevTools / CI) audits performance, accessibility, SEO, and best practices, scoring the page and suggesting fixes. Track them to guard real-world performance."
   },
-
   {
     "id": 36,
-    "category": "State Management",
+    "category": "Redux",
     "question": "State management: Redux Toolkit vs Context vs React Query — when to use what",
     "answer": "- **Context API** — share a low-churn value (theme, auth, locale) and avoid prop drilling. *Not* built for frequently-changing global state.\n- **Redux Toolkit** — predictable global/client state for larger apps: devtools, middleware, selective subscriptions.\n- **React Query (TanStack Query)** — **server state**: fetching, caching, background refetch, sync. Not a client-state store.\n\nCommon combo: React Query for server data + a little Context/Redux for UI/client state. Don't put server data in Redux just out of habit."
   },
   {
     "id": 37,
-    "category": "State Management",
+    "category": "Redux",
     "question": "What is Redux and why use it?",
     "answer": "A predictable **state container**: one immutable store; state changes only by **dispatching actions** handled by **pure reducers**. Why: a single source of truth, traceable updates, time-travel debugging via devtools, middleware for async/side effects, and easier testing — valuable when many distant components share and update the same state. Redux Toolkit (RTK) is the modern, low-boilerplate way to use it."
   },
   {
     "id": 38,
-    "category": "State Management",
+    "category": "Redux",
     "question": "Why is Redux often preferred over Context API in large apps?",
     "answer": "Context re-renders **every** consumer when its value changes (no built-in selectors) and offers nothing for async, middleware, or debugging — so it strains under large, frequently-updated global state. Redux (with `useSelector`) subscribes a component to only the slice it reads, plus devtools/time-travel, middleware for async, and a structured pattern that scales across teams. Context shines for small, low-frequency shared values."
   },
   {
     "id": 39,
-    "category": "State Management",
+    "category": "Redux",
     "question": "Redux data flow",
     "answer": "Strictly **one-way**: UI **dispatches** an action → a pure **reducer** computes the next state from `(prevState, action)` → the **store** updates → subscribed components (via `useSelector`) re-render. This predictable cycle makes changes traceable and debuggable. RTK's `createSlice` generates the actions + reducer together."
   },
   {
     "id": 40,
-    "category": "State Management",
+    "category": "Redux",
     "question": "How do you fetch data in Redux? (Thunk / RTK Query)",
     "answer": "- **Thunk** — an async action creator (`redux-thunk` / RTK's `createAsyncThunk`) that dispatches *pending → fulfilled → rejected* actions around the request; reducers store loading/data/error.\n- **RTK Query** — RTK's data layer that auto-generates hooks (`useGetUsersQuery`) handling fetching, caching, dedupe, and invalidation for you — far less boilerplate.\n\nFor pure server state, many teams use **React Query** instead of putting it in Redux."
   },
   {
     "id": 41,
-    "category": "State Management",
+    "category": "React",
     "question": "Context API limitations",
     "answer": "Any change to a context value re-renders **all** consumers (no selective subscription/selectors), so it's a poor fit for high-frequency or large global state. It also has no built-in async handling, middleware, devtools, or persistence, and stacking many providers leads to \"provider hell.\" Best for low-churn shared values (theme, locale, auth) — not as a Redux replacement."
   },
-
   {
     "id": 42,
-    "category": "Architecture",
+    "category": "React",
     "question": "Folder structure for large projects (feature-based)",
     "answer": "Group by **feature/domain**, not by file type — colocate everything a feature needs:\n\n```text\nsrc/\n  features/\n    cart/  -> components, hooks, cartSlice.ts, api, tests\n    auth/  -> ...\n  shared/  -> ui, hooks, utils used everywhere\n  app/     -> routing, store, providers\n```\n\nScales better than giant `components/` + `reducers/` folders: better discoverability, clear ownership, and easy to move/delete a feature."
   },
   {
     "id": 43,
-    "category": "Architecture",
+    "category": "React",
     "question": "Micro frontends & modularization",
     "answer": "Split a large frontend into **independently built and deployed** apps owned by different teams, composed at runtime (Webpack **Module Federation**, single-spa, iframes) or build time. Pros: team autonomy, independent releases, tech flexibility. Cons: shared-dependency/versioning pain, larger payloads, and consistency/UX overhead. Adopt only when org size/scale truly demands it — it's not free."
   },
   {
     "id": 44,
-    "category": "Architecture",
+    "category": "React",
     "question": "Rendering strategies: CSR vs SSR vs SSG (and Next.js)",
     "answer": "- **CSR** — browser renders everything (SPA): fast in-app nav, slower first paint, weaker SEO.\n- **SSR** — HTML rendered per request on the server: better first paint + SEO, more server cost.\n- **SSG** — HTML pre-built at deploy: fastest + cacheable on a CDN, but content is static (use **ISR** to revalidate).\n\n**Next.js** lets you choose per route and mix them, plus streaming and the App Router's server components."
   },
   {
     "id": 45,
-    "category": "Architecture",
+    "category": "React",
     "question": "API orchestration",
     "answer": "Coordinating multiple backend calls for one view: **parallelize** independent requests, **sequence** dependent ones, then aggregate/normalize the responses — sometimes behind a **BFF** (backend-for-frontend) or **GraphQL** layer so the client makes one call. Also handle partial failures, caching, and retries. Goal: minimize [[network-waterfalls]] and over-/under-fetching."
   },
   {
     "id": 46,
-    "category": "Architecture",
+    "category": "React",
     "question": "Scalable design systems",
     "answer": "A shared, versioned library of reusable, themeable UI components + **design tokens** (color, spacing, typography), documented (e.g. Storybook) so many teams ship consistent, accessible UIs quickly. Key concerns: accessibility baked in, theming, stable component APIs, and adoption/governance so it doesn't fragment as it grows."
   },
-
   {
     "id": 47,
-    "category": "Testing",
+    "category": "React",
     "question": "Unit tests with Jest + React Testing Library",
     "answer": "**Jest** is the runner + assertion + mocking framework. **React Testing Library (RTL)** renders components and queries them the way a *user* would (by role/label/text), encouraging testing **behavior over implementation**.\n\n```js\nrender(<Counter />);\nawait userEvent.click(screen.getByRole('button', { name: /add/i }));\nexpect(screen.getByText('Count: 1')).toBeInTheDocument();\n```\n\nQuery by accessible role/text; avoid asserting on internal state."
   },
   {
     "id": 48,
-    "category": "Testing",
+    "category": "React",
     "question": "Snapshot vs integration tests",
     "answer": "- **Snapshot** — serialize rendered output and flag any diff. Cheap to write but **brittle** and easy to rubber-stamp (`toMatchSnapshot`); best for small, stable markup.\n- **Integration** — exercise several units together through a real user flow (form → submit → result). More setup, but far more confidence that the feature actually works.\n\nFavor behavior/integration tests; use snapshots sparingly."
   },
-
   {
     "id": 49,
-    "category": "Tooling & CI/CD",
+    "category": "React",
     "question": "CI/CD, linting & code quality",
     "answer": "- **CI** runs on every push/PR — install, **lint**, type-check, test, build — catching issues before merge.\n- **CD** then auto-deploys passing builds to preview/staging/prod.\n- **Quality gates**: ESLint (bugs/rules) + Prettier (formatting) + TypeScript + pre-commit hooks (husky + lint-staged) so problems are caught locally and in the pipeline, not in review.\n\nKeeps the codebase consistent and shippable."
   },
-
   {
     "id": 50,
-    "category": "Debugging",
+    "category": "React",
     "question": "Debugging slow renders & unnecessary re-renders",
     "answer": "Open the **React Profiler**, record an interaction, and see what re-rendered and *why* (props/state/context/parent). Common culprits: new object/function props each render, churny context values, missing memoization, oversized/poorly-placed state. Fixes: `React.memo` + `useCallback`/`useMemo`, **state colocation**, splitting context, and virtualizing big lists. Tools like `why-did-you-render` help pinpoint it."
   },
   {
     "id": 51,
-    "category": "Debugging",
+    "category": "React",
     "question": "Race conditions",
     "answer": "When async results arrive **out of order** — e.g. fast typing fires request A then B, but A resolves last and overwrites B's fresher data. Fixes: cancel stale requests with `AbortController`, ignore outdated responses (track the latest request id, or a `let active = true` cleanup flag in `useEffect`), or use a data lib (React Query) that handles ordering/cancellation for you."
   },
   {
     "id": 52,
-    "category": "Debugging",
+    "category": "React",
     "question": "Handling API failures",
     "answer": "Design for failure: render explicit **loading / error / empty** states, **retry** transient errors with backoff, set timeouts, show user-friendly messages (not raw errors), and **log** failures for observability (Sentry). Never leave the UI stuck spinning. Centralize via an HTTP interceptor + an error boundary, or a query library that exposes `isError`/`refetch`."
   },
   {
     "id": 53,
-    "category": "Debugging",
+    "category": "React",
     "question": "Debugging real-world production issues",
     "answer": "Reproduce from the bug report / telemetry, use **source maps** to turn minified stack traces back into real code, check logs + monitoring (Sentry, RUM), and **bisect recent releases** to find what changed. Add targeted logging, form a hypothesis, fix the root cause (not just the symptom), and lock it in with a regression test. Always frame by user impact and \"what changed?\""
   },
-
   {
     "id": 54,
-    "category": "Coding Challenges",
+    "category": "React",
     "question": "Build a debounce / throttle hook",
     "answer": "- **Debounce** — run only after input *stops* for a delay (search box).\n- **Throttle** — run at most once per interval (scroll/resize).\n\n```js\nfunction useDebounce(value, delay = 300) {\n  const [debounced, setDebounced] = useState(value);\n  useEffect(() => {\n    const id = setTimeout(() => setDebounced(value), delay);\n    return () => clearTimeout(id); // reset on each change\n  }, [value, delay]);\n  return debounced;\n}\n```\n\nFor throttle, store the last-run time in a `useRef` and skip calls inside the window."
   },
   {
     "id": 55,
-    "category": "Coding Challenges",
+    "category": "React",
     "question": "Infinite scroll component",
     "answer": "Load the next page as the user nears the bottom. Prefer an **IntersectionObserver** on a sentinel element over scroll listeners:\n\n```jsx\nconst ref = useRef();\nuseEffect(() => {\n  const io = new IntersectionObserver(([e]) => {\n    if (e.isIntersecting && hasMore && !loading) loadMore();\n  });\n  if (ref.current) io.observe(ref.current);\n  return () => io.disconnect();\n}, [hasMore, loading]);\n// render list, then <div ref={ref} /> as the sentinel\n```\n\nTrack `page`, `hasMore`, and `loading`; append results. For very long lists, combine with [[virtualization-windowing]]."
   },
   {
     "id": 56,
-    "category": "Coding Challenges",
+    "category": "React",
     "question": "Modal manager with context",
     "answer": "Centralize modal state in a provider exposing `openModal(content)` / `closeModal`; a single root renders the active modal, so any component can trigger one without prop drilling.\n\n```jsx\nconst ModalCtx = createContext();\nfunction ModalProvider({ children }) {\n  const [modal, setModal] = useState(null);\n  const open = useCallback((c) => setModal(c), []);\n  const close = useCallback(() => setModal(null), []);\n  return (\n    <ModalCtx.Provider value={{ open, close }}>\n      {children}\n      {modal && <Backdrop onClick={close}>{modal}</Backdrop>}\n    </ModalCtx.Provider>\n  );\n}\n```\n\nAdd a stack (array) if you need multiple modals; trap focus + close on Esc for a11y."
   },
   {
     "id": 57,
-    "category": "Coding Challenges",
+    "category": "React",
     "question": "Custom form validator",
     "answer": "A small `useForm` hook: hold `values` + `errors`, validate against per-field rules on change/submit.\n\n```js\nfunction validate(values, rules) {\n  const errors = {};\n  for (const field in rules) {\n    const err = rules[field].find(r => !r.test(values[field]))?.msg;\n    if (err) errors[field] = err;\n  }\n  return errors; // {} = valid\n}\n// rules example:\nconst rules = {\n  email: [\n    { test: v => !!v, msg: 'Required' },\n    { test: v => v.includes('@'), msg: 'Invalid email' },\n  ],\n};\n```\n\nExpose `values`, `errors`, `handleChange`, and `handleSubmit` (validate, then submit if no errors). Show each field's error inline."
+  },
+  {
+    "id": 58,
+    "category": "React",
+    "question": "How does the Virtual DOM work?",
+    "answer": "The Virtual DOM is a lightweight JS-object representation of the real DOM. On each render React builds a new VDOM tree, **diffs** it against the previous one (reconciliation), then applies only the minimal set of changes to the real DOM in a **batched** update. Direct DOM manipulation is slow; diffing + batching makes updates efficient and lets you write declarative UI. (See *Reconciliation* for the diffing rules.)"
+  },
+  {
+    "id": 59,
+    "category": "React",
+    "question": "React.memo vs useMemo vs useCallback",
+    "answer": "All three memoize, but different things:\n\n```js\nReact.memo(Component)        // skip a COMPONENT's re-render when props are shallow-equal\nuseMemo(() => compute, deps) // cache a computed VALUE\nuseCallback(fn, deps)        // cache a FUNCTION's identity\n```\n\n`useCallback(fn, d)` is just `useMemo(() => fn, d)`. Typical combo: wrap a child in `React.memo`, then pass it `useCallback`/`useMemo` props so its props stay stable and it actually skips rendering."
+  },
+  {
+    "id": 60,
+    "category": "React",
+    "question": "Explain the React Fiber architecture",
+    "answer": "Fiber is React 16+'s reconciliation engine. It re-implements rendering as **interruptible units of work** (a linked list of 'fiber' nodes) instead of one recursive, blocking pass. That lets React **pause, resume, reuse, and prioritize** work — the foundation for concurrent features (time-slicing, `startTransition`, Suspense). Still two phases: **render** (interruptible, builds the tree) and **commit** (synchronous, applies to the DOM)."
+  },
+  {
+    "id": 61,
+    "category": "React",
+    "question": "What are React Server Components (RSC)?",
+    "answer": "Components that render **on the server** and stream their output to the client. They ship **zero JS** to the browser, can access server resources (DB, filesystem, secrets) directly, and shrink the bundle. They **can't** use state, effects, or browser APIs — that's for **Client Components** (marked `'use client'`). RSC + Client Components compose in one tree; used by the Next.js App Router."
+  },
+  {
+    "id": 62,
+    "category": "React",
+    "question": "How do you protect routes (auth-guarded routes)?",
+    "answer": "Wrap protected routes so unauthenticated users are redirected to login:\n\n```jsx\nfunction RequireAuth({ children }) {\n  const { user } = useAuth();\n  const location = useLocation();\n  if (!user) return <Navigate to='/login' state={{ from: location }} replace />;\n  return children;\n}\n// <Route path='/dashboard' element={<RequireAuth><Dashboard/></RequireAuth>} />\n```\n\nExtend with role checks for authorization. Important: client-side guards are **UX only** — always enforce auth on the server/API too."
+  },
+  {
+    "id": 63,
+    "category": "React",
+    "question": "How do you implement pagination?",
+    "answer": "Show data in pages instead of all at once.\n\n- **Offset/page-based** — request `?page=2&limit=20`; track `page` + `totalPages`, render page controls.\n- **Cursor-based** — request items *after* a cursor/id; better for large or real-time data (stable as items change).\n\nKeep the current page in the **URL** (`?page=`) so it's shareable and back-button friendly. Contrast with infinite scroll, which auto-loads the next page on scroll."
+  },
+  {
+    "id": 64,
+    "category": "React",
+    "question": "How do you build dynamic forms?",
+    "answer": "Forms whose fields are added/removed at runtime ('add another phone number') or generated from a config/schema. Keep field values in an **array in state** and map to render:\n\n```jsx\nconst [items, setItems] = useState([{ value: '' }]);\nconst add = () => setItems([...items, { value: '' }]);\nconst update = (i, v) =>\n  setItems(items.map((it, idx) => (idx === i ? { value: v } : it)));\n```\n\nGive each row a **stable key** (not the index if rows can reorder). Libraries: React Hook Form (`useFieldArray`), Formik."
+  },
+  {
+    "id": 65,
+    "category": "React",
+    "question": "What are React Portals?",
+    "answer": "`createPortal(child, domNode)` renders children into a **different part of the DOM** (outside the parent hierarchy) while keeping them in the React tree — so context and event bubbling still work (events bubble through the *React* tree, not the DOM tree).\n\n```jsx\nreturn createPortal(<Modal/>, document.getElementById('modal-root'));\n```\n\nUse for modals, tooltips, and dropdowns that must escape a parent's `overflow:hidden` or `z-index` clipping."
+  },
+  {
+    "id": 66,
+    "category": "React",
+    "question": "API integration task: fetch data and show details on click",
+    "answer": "A common machine-coding task. Fetch on mount, track `data/loading/error`, render a list, and on click set a `selected` item to show its details:\n\n```jsx\nconst [data, setData] = useState([]);\nconst [selected, setSelected] = useState(null);\nuseEffect(() => {\n  fetch('https://api.example.com/items')\n    .then(r => r.json()).then(setData).catch(setError);\n}, []);\n// list:   data.map(it => <li key={it.id} onClick={() => setSelected(it)}>{it.title}</li>)\n// detail: selected && <Details item={selected} />\n```\n\nShow loading + error states; debounce search or paginate if the list is large."
+  },
+  {
+    "id": 67,
+    "category": "Javascript",
+    "question": "What is array destructuring?",
+    "answer": "Unpacking array values into variables by **position**:\n\n```js\nconst [a, b, ...rest] = [1, 2, 3, 4]; // a=1, b=2, rest=[3,4]\nconst [, second] = arr;               // skip elements\nconst [x = 10] = [];                   // default value -> 10\n[a, b] = [b, a];                       // swap without a temp\n```\n\nAlso works in function params: `function f([first, second]) {}`. The `{ }` form is **object** destructuring (by key)."
+  },
+  {
+    "id": 68,
+    "category": "Javascript",
+    "question": "What are the major ES6 (ES2015) features?",
+    "answer": "- `let` / `const` (block scope), **arrow functions** (lexical `this`)\n- **Template literals**, default / rest / spread params\n- **Destructuring** (array + object)\n- **Classes**, ES **modules** (`import` / `export`)\n- **Promises**, `Map` / `Set`, `Symbol`\n- Iterators / generators, `for…of`\n\n(Later editions added `async/await`, optional chaining `?.`, and nullish coalescing `??`.)"
+  },
+  {
+    "id": 69,
+    "category": "Javascript",
+    "question": "What is a Promise?",
+    "answer": "An object representing the eventual result of an async operation. It has three states — **pending → fulfilled or rejected** — and settles only once. Consume it with `.then` / `.catch` / `.finally` or `await`. Promises avoid callback hell and are chainable.\n\n```js\nfetch(url)\n  .then(r => r.json())\n  .then(data => use(data))\n  .catch(err => handle(err));\n```\n\n(See *Async execution* for how promises schedule onto the event loop, and *Promise combinators* for `all`/`race`/etc.)"
+  },
+  {
+    "id": 70,
+    "category": "Javascript",
+    "question": "Promise combinators: Promise.all, race, allSettled, any — why use them?",
+    "answer": "- **`Promise.all([…])`** — resolves when *all* fulfill (array of results); **rejects fast** if any one rejects. Use for parallel work you *all* need.\n- **`Promise.allSettled`** — waits for all, **never rejects**; returns each `{status, value|reason}`. Use when you want every result regardless of failures.\n- **`Promise.race`** — settles as soon as the *first* settles (fulfill *or* reject). Use for timeouts.\n- **`Promise.any`** — resolves on the first *fulfilled*; rejects only if **all** reject. Use for 'first success wins'."
+  },
+  {
+    "id": 71,
+    "category": "Javascript",
+    "question": "What types of web storage are available in browsers?",
+    "answer": "- **localStorage** — string key/value, persists until cleared, ~5–10MB, per-origin, synchronous.\n- **sessionStorage** — same API, but cleared when the tab closes.\n- **Cookies** — small (~4KB), sent with every HTTP request; use for sessions/auth (`HttpOnly`, `Secure`, `SameSite`).\n- **IndexedDB** — asynchronous, large, structured/object storage for complex or offline data.\n\nlocal/session store strings only (`JSON.stringify` objects). **Don't** keep tokens/secrets in localStorage — it's readable by any XSS."
+  },
+  {
+    "id": 72,
+    "category": "HTML/CSS",
+    "question": "What are semantic HTML elements?",
+    "answer": "Tags that describe the **meaning/role** of their content, not just its look: `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<aside>`, `<footer>`, `<figure>`, `<time>`, `<mark>` — versus generic `<div>` / `<span>`. Benefits: **accessibility** (screen-reader landmarks), **SEO**, and clearer, more maintainable markup."
+  },
+  {
+    "id": 73,
+    "category": "HTML/CSS",
+    "question": "What are the CSS position properties (static, relative, absolute, fixed, sticky)?",
+    "answer": "- **static** — default; normal flow, ignores `top/left/right/bottom`.\n- **relative** — offset from its normal spot; still occupies its original space; becomes a positioning context for children.\n- **absolute** — removed from flow; positioned relative to the nearest *positioned* ancestor.\n- **fixed** — removed from flow; positioned relative to the **viewport** (stays put on scroll).\n- **sticky** — hybrid: behaves relative until a scroll threshold, then 'sticks' like fixed within its container."
+  },
+  {
+    "id": 74,
+    "category": "HTML/CSS",
+    "question": "Difference between display: flex and display: grid",
+    "answer": "- **Flexbox** — **one-dimensional**: lays items along a single axis (a row *or* a column). Ideal for navbars, toolbars, and distributing/aligning items in one direction. Content-driven.\n- **Grid** — **two-dimensional**: rows *and* columns together, with precise placement. Ideal for overall page/section layout. Layout-driven.\n\nThey compose well: Grid for the macro layout, Flex for aligning items inside a region."
+  },
+  {
+    "id": 75,
+    "category": "HTML/CSS",
+    "question": "How many ways can you center a div (horizontally and vertically)?",
+    "answer": "```css\n/* 1. Flexbox — most common */\n.parent { display: flex; justify-content: center; align-items: center; }\n\n/* 2. Grid — shortest */\n.parent { display: grid; place-items: center; }\n\n/* 3. Absolute + transform — works for unknown size */\n.child  { position: absolute; top: 50%; left: 50%;\n          transform: translate(-50%, -50%); }\n\n/* 4. margin auto — horizontal only, needs a width */\n.child  { width: 200px; margin: 0 auto; }\n```\n\nFlex and Grid are the modern, preferred approaches."
+  },
+  {
+    "id": 76,
+    "category": "HTML/CSS",
+    "question": "Why do we write <!DOCTYPE html> at the top of an HTML document?",
+    "answer": "`<!DOCTYPE html>` tells the browser to render in **standards mode** instead of legacy **quirks mode** (which emulates 1990s buggy behavior, e.g. the old box model). It isn't an HTML tag — just a declaration — and in HTML5 it's simply `<!DOCTYPE html>`. Omitting it can cause inconsistent layout/box-sizing across browsers."
   }
 ]
