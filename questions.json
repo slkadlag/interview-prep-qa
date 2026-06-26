@@ -454,5 +454,95 @@
     "category": "HTML/CSS",
     "question": "Why do we write <!DOCTYPE html> at the top of an HTML document?",
     "answer": "`<!DOCTYPE html>` tells the browser to render in **standards mode** instead of legacy **quirks mode** (which emulates 1990s buggy behavior, e.g. the old box model). It isn't an HTML tag — just a declaration — and in HTML5 it's simply `<!DOCTYPE html>`. Omitting it can cause inconsistent layout/box-sizing across browsers."
+  },
+  {
+    "id": 77,
+    "category": "React",
+    "question": "High-level design: how is form data implemented in controlled vs uncontrolled components?",
+    "answer": "**Controlled** — React state is the single source of truth. Each field has `value={state}` + `onChange`; every keystroke updates state and re-renders, so the input always mirrors state.\n```jsx\nconst [form, setForm] = useState({ email: '', pw: '' });\nconst onChange = e => setForm({ ...form, [e.target.name]: e.target.value });\n<input name='email' value={form.email} onChange={onChange} />\n```\nDesign: one state object, a single `handleChange` keyed by `name`, validation/derived UI computed from state, submit reads from state.\n\n**Uncontrolled** — the DOM holds the value; React doesn't track keystrokes. Use a `ref` (or `FormData` on submit) and `defaultValue` for initial values.\n```jsx\nconst emailRef = useRef();\n<input defaultValue='' ref={emailRef} />\n// onSubmit -> emailRef.current.value\n```\nLess re-rendering, but live validation is harder. Controlled is the default; uncontrolled suits simple forms, file inputs, or non-React widgets."
+  },
+  {
+    "id": 78,
+    "category": "React",
+    "question": "Implement a Stopwatch (Start, Stop, Reset + live timer)",
+    "answer": "Keep elapsed time in state and the interval id in a `useRef` (so it survives renders without causing them); clean up on unmount.\n```jsx\nfunction Stopwatch() {\n  const [ms, setMs] = useState(0);\n  const timer = useRef(null);\n  const start = () => {\n    if (timer.current) return;                 // already running\n    const startedAt = Date.now() - ms;\n    timer.current = setInterval(() => setMs(Date.now() - startedAt), 100);\n  };\n  const stop  = () => { clearInterval(timer.current); timer.current = null; };\n  const reset = () => { stop(); setMs(0); };\n  useEffect(() => () => clearInterval(timer.current), []); // cleanup\n  return (<>\n    <span>{(ms / 1000).toFixed(1)}s</span>\n    <button onClick={start}>Start</button>\n    <button onClick={stop}>Stop</button>\n    <button onClick={reset}>Reset</button>\n  </>);\n}\n```\nComputing from `Date.now()` (not accumulating `+= 100`) keeps the timer accurate."
+  },
+  {
+    "id": 79,
+    "category": "React",
+    "question": "Build a To-Do list and optimize its re-renders",
+    "answer": "Base: a list in state with add / toggle / delete. The interview focus is **avoiding unnecessary re-renders** as the list grows:\n- Memoize each row with `React.memo` so only the changed item re-renders.\n- Wrap handlers in `useCallback` so memoized rows keep stable props.\n- Use a **stable key** (item id, never the index if order changes).\n- Update immutably; derive filtered views with `useMemo`.\n```jsx\nconst Item = React.memo(({ todo, onToggle }) => (\n  <li onClick={() => onToggle(todo.id)}>{todo.text}</li>\n));\nconst onToggle = useCallback(id =>\n  setTodos(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t)), []);\n```\nWithout `memo` + `useCallback`, toggling one item re-renders every row."
+  },
+  {
+    "id": 80,
+    "category": "React",
+    "question": "Difference between REST API and GraphQL",
+    "answer": "- **REST** — multiple endpoints, each returning a fixed shape. Simple and cacheable over HTTP, but prone to **over-fetching** (extra fields you don't need) and **under-fetching** (several round-trips to assemble one view).\n- **GraphQL** — a single endpoint where the client asks for **exactly the fields it needs** in one query, and can pull nested/related data together. Strongly-typed schema. Trade-offs: HTTP caching is harder and the server is more complex.\n\nUse REST for simple/CRUD or cache-heavy APIs; reach for GraphQL when clients need flexible, aggregated data from many sources and you want to avoid round-trips."
+  },
+  {
+    "id": 81,
+    "category": "Javascript",
+    "question": "TypeScript: typed user data + email validation + dynamic regex",
+    "answer": "Define an interface, then write the logic:\n```ts\ninterface User { id: number; name: string; email: string; }\n\n// names of users whose email is valid\nconst EMAIL = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nconst validNames = (users: User[]): string[] =>\n  users.filter(u => EMAIL.test(u.email)).map(u => u.name);\n\n// match emails using a regex supplied at runtime (string -> RegExp)\nconst matchByRegex = (emails: string[], pattern: string): string[] => {\n  const re = new RegExp(pattern);\n  return emails.filter(e => re.test(e));\n};\n```\nBuilding a `RegExp` from user input can throw on bad syntax — wrap in `try/catch` — and untrusted patterns risk **ReDoS**, so validate/limit them."
+  },
+  {
+    "id": 82,
+    "category": "Javascript",
+    "question": "call, apply, bind — difference + polyfills",
+    "answer": "All three set `this` for a function:\n- **`call(thisArg, a, b)`** — invoke now, args listed.\n- **`apply(thisArg, [a, b])`** — invoke now, args as an array.\n- **`bind(thisArg, …)`** — returns a *new* function with `this` (and optional preset args) fixed, to call later.\n```js\nFunction.prototype.myCall = function (ctx, ...args) {\n  ctx = ctx || globalThis;\n  const key = Symbol('fn');\n  ctx[key] = this;          // attach so `this` binds to ctx\n  const res = ctx[key](...args);\n  delete ctx[key];\n  return res;\n};\nFunction.prototype.myApply = function (ctx, args = []) {\n  return this.myCall(ctx, ...args);\n};\nFunction.prototype.myBind = function (ctx, ...preset) {\n  const fn = this;\n  return (...later) => fn.myCall(ctx, ...preset, ...later);\n};\n```"
+  },
+  {
+    "id": 83,
+    "category": "Javascript",
+    "question": "Deep copy vs shallow copy",
+    "answer": "- **Shallow copy** — copies only the top level; nested objects/arrays stay **shared by reference**, so mutating a nested value affects both. Via `{ ...obj }`, `Object.assign({}, obj)`, `arr.slice()`.\n- **Deep copy** — a fully independent clone, nested levels included.\n```js\nconst shallow = { ...obj };                        // nested still shared\nconst deep    = structuredClone(obj);              // modern, handles Date/Map/etc.\nconst deepJson = JSON.parse(JSON.stringify(obj));  // simple, but drops functions/undefined/Dates\n```\nPrefer the built-in `structuredClone` for deep copies; the JSON trick is a quick fallback for plain data only."
+  },
+  {
+    "id": 84,
+    "category": "Javascript",
+    "question": "Promise & async/await output puzzle",
+    "answer": "What prints, and why?\n```js\nconsole.log(1);\nsetTimeout(() => console.log(2));\nPromise.resolve().then(() => console.log(3));\n(async () => { console.log(4); await null; console.log(5); })();\nconsole.log(6);\n// Output: 1, 4, 6, 3, 5, 2\n```\nSynchronous code runs first → **1, 4, 6**. `await` queues the rest of the async function as a **microtask**. All microtasks (**3**, then **5**) drain before any **macrotask** (`setTimeout` → **2**). (See *Microtasks vs macrotasks*.)"
+  },
+  {
+    "id": 85,
+    "category": "Javascript",
+    "question": "Currying for infinite sum — sum(10)(20)(30)() = 60",
+    "answer": "Return a function that accumulates until it's called with **no argument**, then yields the total:\n```js\nfunction sum(a) {\n  let total = a;\n  function inner(b) {\n    if (b === undefined) return total;  // terminator: sum(...)()\n    total += b;\n    return inner;\n  }\n  return inner;\n}\nsum(10)(20)(30)();             // 60\nsum(10)(20)(30)(40)(50)(60)(); // 210\n```\nEach call returns `inner`, which keeps `total` alive via **closure**; the empty call ends the chain."
+  },
+  {
+    "id": 86,
+    "category": "DataStructure",
+    "question": "Flatten a nested array without Array.flat()",
+    "answer": "Recurse into any element that is itself an array:\n```js\nfunction flatten(arr) {\n  const out = [];\n  for (const x of arr) {\n    if (Array.isArray(x)) out.push(...flatten(x)); // recurse\n    else out.push(x);\n  }\n  return out;\n}\nflatten([1,2,3,[4,5,6,[7,8,[10,11]]],9]);\n// [1,2,3,4,5,6,7,8,10,11,9]\n```\nReduce one-liner: `arr.reduce((a,x) => a.concat(Array.isArray(x) ? flatten(x) : x), [])`. For very deep arrays, use an explicit stack to avoid hitting recursion limits."
+  },
+  {
+    "id": 87,
+    "category": "DataStructure",
+    "question": "Find the sum of numbers without a for loop",
+    "answer": "```js\n// reduce (idiomatic)\nconst sum = arr => arr.reduce((a, b) => a + b, 0);\n\n// recursion (shows the concept)\nconst sumR = ([head, ...tail]) =>\n  head === undefined ? 0 : head + sumR(tail);\n\nsum([1,2,3,4]); // 10\n```\n`reduce` is the clean choice. Recursion demonstrates the idea but watch call-stack depth on large arrays."
+  },
+  {
+    "id": 88,
+    "category": "DataStructure",
+    "question": "Find the first repeating character (e.g. \"success\" → \"c\")",
+    "answer": "Scan left to right, tracking characters seen; return the first one already seen:\n```js\nfunction firstRepeating(str) {\n  const seen = new Set();\n  for (const ch of str) {\n    if (seen.has(ch)) return ch; // first to repeat\n    seen.add(ch);\n  }\n  return null;\n}\nfirstRepeating('success'); // 'c'\n```\nO(n) time, O(k) space (k = distinct chars). For `success`: s, u, c, c → the first character seen twice is **c**."
+  },
+  {
+    "id": 89,
+    "category": "Redux",
+    "question": "Redux Toolkit (thunks) vs RTK Query for fetching APIs — which is better?",
+    "answer": "Both ship with Redux Toolkit. For fetching server data (e.g. an e-commerce catalog/cart):\n- **RTK thunks (`createAsyncThunk` + slice)** — you hand-write loading/success/error reducers and any caching. Full control; best when the response is **merged into complex client state** or needs custom logic.\n- **RTK Query** — a dedicated data layer: define endpoints, get auto-generated hooks (`useGetProductsQuery`) with **caching, dedup, refetch, invalidation, and loading/error flags** built in. Far less boilerplate.\n\n**Verdict:** for typical server data (products, orders) **RTK Query usually wins** — less code, automatic caching + invalidation. Use plain thunks when you must normalize data into bespoke client state or run custom side-effects. (Some teams use React Query instead for pure server state.)"
+  },
+  {
+    "id": 90,
+    "category": "Redux",
+    "question": "RTK code: fetch API data via middleware and store it in state",
+    "answer": "`createAsyncThunk` (thunk middleware) dispatches pending/fulfilled/rejected; the slice handles them in `extraReducers`:\n```js\nimport { createAsyncThunk, createSlice } from '@reduxjs/toolkit';\n\nexport const fetchUsers = createAsyncThunk('users/fetch', async () => {\n  const res = await fetch('https://api.example.com/users');\n  return res.json();\n});\n\nconst usersSlice = createSlice({\n  name: 'users',\n  initialState: { items: [], loading: false, error: null },\n  reducers: {},\n  extraReducers: (b) => {\n    b.addCase(fetchUsers.pending,   (s) => { s.loading = true;  s.error = null; });\n    b.addCase(fetchUsers.fulfilled, (s, a) => { s.loading = false; s.items = a.payload; });\n    b.addCase(fetchUsers.rejected,  (s, a) => { s.loading = false; s.error = a.error.message; });\n  },\n});\nexport default usersSlice.reducer;\n// in a component: dispatch(fetchUsers()); read items/loading with useSelector\n```\n`configureStore` wires in the thunk middleware automatically."
+  },
+  {
+    "id": 91,
+    "category": "HTML/CSS",
+    "question": "Place 5 divs in a row without flex, margin, or padding",
+    "answer": "Block `<div>`s stack vertically by default. To line them up without flexbox/margin/padding, change their **display**:\n```css\n.box { display: inline-block; width: 80px; height: 80px; }\n/* `inline-block` flows them in a row AND respects width/height */\n```\nAlternatives: `display: inline` (but it ignores width/height), `float: left`, or `display: grid; grid-auto-flow: column` on the parent. Note: `inline-block` introduces small whitespace gaps from the newlines between tags in the HTML."
   }
 ]
